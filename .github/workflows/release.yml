@@ -10,7 +10,9 @@ on:
 
 jobs:
   release:
+    name: Publish package
     runs-on: ubuntu-latest
+    environment: release
 
     permissions:
       contents: write
