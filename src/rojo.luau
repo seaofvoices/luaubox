@@ -45,8 +45,26 @@ end
 local function getModelConfig(modelName: string, rootPath: string)
     return {
         name = modelName,
+        emitLegacyScripts = false,
         tree = {
             ['$path'] = rootPath,
+            node_modules = {
+                ['$path'] = 'node_modules',
+            },
+        },
+    }
+end
+
+local function getPluginConfig(pluginName: string, rootPath: string, entrypointPath: string?)
+    return {
+        name = `{pluginName}-plugin`,
+        emitLegacyScripts = false,
+        tree = {
+            ['$className'] = if entrypointPath then nil else 'Folder',
+            ['$path'] = entrypointPath,
+            [pluginName] = {
+                ['$path'] = rootPath,
+            },
             node_modules = {
                 ['$path'] = 'node_modules',
             },
@@ -70,6 +88,7 @@ local function getTestPlaceConfig(rootPath: string?, buildMode: boolean)
     end
     return {
         name = 'test-place',
+        emitLegacyScripts = false,
         tree = {
             ['$className'] = 'DataModel',
             ReplicatedStorage = {
@@ -99,5 +118,6 @@ end
 return {
     createRunner = createRojoRunner,
     getModelConfig = getModelConfig,
+    getPluginConfig = getPluginConfig,
     getTestPlaceConfig = getTestPlaceConfig,
 }

@@ -22,6 +22,10 @@ export type Options = {
     tempPath: Path,
 }
 
+local SKIP_PACKAGES = {
+    luaubox = true,
+}
+
 local DIM = stdio.style('dim')
 local RESET = stdio.style('reset')
 
@@ -48,7 +52,7 @@ local function processSources(options: Options)
         end
         local packageJson = utils.readJsonFile(packageJsonPath)
 
-        if not packageJson.main then
+        if SKIP_PACKAGES[packageJson.name] or not packageJson.main then
             return
         end
 

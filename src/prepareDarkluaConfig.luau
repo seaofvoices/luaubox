@@ -4,8 +4,10 @@ local utils = require('./utils')
 
 type AsPath = PathModule.AsPath
 
+export type Environment = 'roblox' | 'lune'
+
 type Options = {
-    environment: 'roblox' | 'lune',
+    environment: Environment?,
     bundle: boolean,
     testMode: boolean,
     devMode: boolean,
@@ -33,6 +35,10 @@ local function prepareDarkluaConfig(configPath: AsPath, options: Options)
     local compact = options.compact
     local noTypes = options.noTypes
     local baseDarkluaConfigPath = options.baseDarkluaConfigPath
+
+    if environment == nil and not bundle then
+        error('environment is required when bundling is not enabled')
+    end
 
     local darkluaConfig = if baseDarkluaConfigPath and utils.isFile(baseDarkluaConfigPath)
         then utils.readJsonFile(baseDarkluaConfigPath)
@@ -79,11 +85,15 @@ local function prepareDarkluaConfig(configPath: AsPath, options: Options)
         table.insert(darkluaConfig.rules, 1, 'remove_types')
     end
 
-    local injectValues = {
-        { variable = 'LUA_ENV', value = environment :: string | boolean },
-        { variable = 'DEV', value = devMode },
-        { variable = '__DEV__', value = devMode },
-    }
+    local injectValues = {}
+    if environment then
+        table.insert(
+            injectValues,
+            { variable = 'LUA_ENV', value = environment :: string | boolean }
+        )
+    end
+    table.insert(injectValues, { variable = 'DEV', value = devMode })
+    table.insert(injectValues, { variable = '__DEV__', value = devMode })
 
     for _, item in injectValues do
         local found = false

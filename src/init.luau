@@ -34,7 +34,20 @@ end
 
 local VALID_TARGETS = {
     'roblox',
+    'roblox-plugin',
     'lune',
+    'bundle',
+}
+
+local VALID_ENVIRONMENTS = {
+    'roblox',
+    'lune',
+}
+
+local TARGET_TO_ENVIRONMENT: { [string]: processBundle.Environment } = {
+    roblox = 'roblox',
+    ['roblox-plugin'] = 'roblox',
+    lune = 'lune',
 }
 
 local HELP_MESSAGE = `Running luaubox v{currentVersion}\n\n`
@@ -46,7 +59,7 @@ Optional:
                     luaubox will expect and use the root package.json file.
 
 Required:
-    <target>:        The target to build ('roblox' or 'lune')
+    <target>:        The target to build ('roblox', 'roblox-plugin' or 'lune')
 
 Options:
     --show-commands  Show the commands being executed
@@ -54,13 +67,14 @@ Options:
     --dev            Define development mode variables to when processing
                      Luau code
     --base-darklua   The path to the base darklua config file
-    --bundle         Bundle the project into a single file
     --no-type        Remove Luau types from the output
     --compact        Shorten variables and minify source code
 
 Roblox options:
-    --test           Build the project as a Roblox testing place file with
-                     scripts to run it with run-in-roblox]]
+    --test             Build the project as a Roblox testing place file with
+                       scripts to run it with run-in-roblox
+    --plugin-function  The name of the function to call when the plugin is
+                       started (default: 'start')]]
 
 local function runWithArgs(args: { string })
     -- copy the args to avoid modifying the original list (which could be readonly too)
@@ -74,9 +88,10 @@ local function runWithArgs(args: { string })
     local devMode = extractArgumentFlag(args, { '--dev', '-d' })
     local compact = extractArgumentFlag(args, { '--compact' })
     local noTypes = extractArgumentFlag(args, { '--no-type', '--no-types' })
-    local bundle = extractArgumentFlag(args, { '--bundle', '-b' })
 
+    local environment = extractArgumentWithValue(args, { '--environment', '--env', '-e' })
     local baseDarkluaConfigPath = extractArgumentWithValue(args, { '--base-darklua' })
+    local pluginStartFunctionName = extractArgumentWithValue(args, { '--plugin-function' })
 
     if help then
         print(HELP_MESSAGE)
@@ -100,6 +115,19 @@ local function runWithArgs(args: { string })
         error(`invalid target '{target}', valid targets are: {table.concat(VALID_TARGETS, ', ')}`)
     end
 
+    local normalizedEnvironment = environment and string.lower(environment)
+
+    if
+        normalizedEnvironment ~= nil and not table.find(VALID_ENVIRONMENTS, normalizedEnvironment)
+    then
+        error(
+            `invalid environment '{environment}', valid environments are: {table.concat(
+                VALID_ENVIRONMENTS,
+                ', '
+            )}`
+        )
+    end
+
     if #args > 1 then
         error(
             `received too many arguments, expected only the project name but received {#args} arguments: '{table.concat(
@@ -118,7 +146,7 @@ local function runWithArgs(args: { string })
     end
 
     local options = {
-        environment = normalizedTarget :: processBundle.Environment,
+        environment = TARGET_TO_ENVIRONMENT[normalizedTarget],
         projectName = projectName,
         packageJsonPath = 'package.json',
         parallelMode = parallelMode,
@@ -140,19 +168,18 @@ local function runWithArgs(args: { string })
     end
 
     if normalizedTarget == 'roblox' then
-        if bundle then
-            processBundle(options)
-        else
-            processRoblox(options)
-        end
+        processRoblox(options)
+    elseif normalizedTarget == 'roblox-plugin' then
+        options.pluginMode = true
+        options.pluginStartFunctionName = pluginStartFunctionName
+        processRoblox(options)
+    elseif normalizedTarget == 'bundle' then
+        options.environment = normalizedEnvironment :: processBundle.Environment
+        processBundle(options)
     elseif normalizedTarget == 'lune' then
-        if bundle then
-            processBundle(options)
-        else
-            error(
-                `the lune target is currently only supported with the bundle option, re-run with the '--bundle' argument`
-            )
-        end
+        error(
+            `the lune target is currently unimplemented!\n\nNote that luaubox can bundle using the lune environment, re-run with the 'luaubox --target bundle --env lune'`
+        )
     end
 end
 
