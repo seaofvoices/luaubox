@@ -13,8 +13,12 @@ local COLOR = stdio.color('cyan')
 
 local function displayCreated(location: AsPath)
     local location = Path.from(location)
+    local fileName = location:fileName()
+
+    local locationDisplay = location:toString()
+
     print(
-        `{BOLD}Created {DIM}{COLOR}{location:parent()}/{RESET}{BOLD}{COLOR}{location:fileName()}{RESET}`
+        `{BOLD}Created {DIM}{COLOR}{string.sub(locationDisplay, 1, -#fileName - 1)}{RESET}{BOLD}{COLOR}{fileName}{RESET}`
     )
 end
 

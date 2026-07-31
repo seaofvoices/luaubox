@@ -17,10 +17,15 @@ type Path = PathModule.Path
 local Path = PathModule.Path
 
 local DEFAULT_SOURCE_PATH = 'src'
+local PLUGIN_ENTRYPOINT_PATH = 'temp-plugin-entrypoint.server.luau'
+local DEFAULT_PLUGIN_START_FUNCTION_NAME = 'start'
+local SOURCEMAP_PATH = 'sourcemap.json'
 
 export type Options = BaseOptions.BaseOptions & {
     testMode: boolean?,
+    pluginMode: boolean?,
     tempRojoFileName: string?,
+    pluginStartFunctionName: string?,
 }
 
 local function processRoblox(options: Options)
@@ -34,9 +39,12 @@ local function processRoblox(options: Options)
     local compact = options.compact == true
     local noTypes = options.noTypes == true
     local testMode = options.testMode == true
+    local pluginMode = options.pluginMode == true
     local devMode = options.devMode == true
     local tempDarkluaConfigName = options.tempDarkluaConfigName or 'temp-darklua-config.json'
     local tempRojoFileName = options.tempRojoFileName or 'temp-rojo-file.project.json'
+    local pluginStartFunctionName = options.pluginStartFunctionName
+        or DEFAULT_PLUGIN_START_FUNCTION_NAME
 
     local rojoRunner = rojo.createRunner(showCommands)
 
@@ -49,6 +57,12 @@ local function processRoblox(options: Options)
             if isNodeModuleProject then nil else DEFAULT_SOURCE_PATH,
             false
         )
+        elseif pluginMode then rojo.getPluginConfig(
+            nameWithoutScope,
+            if isNodeModuleProject
+                then `node_modules/.luau-aliases/{projectName}.luau`
+                else DEFAULT_SOURCE_PATH
+        )
         else rojo.getModelConfig(
             nameWithoutScope,
             if isNodeModuleProject
@@ -57,7 +71,8 @@ local function processRoblox(options: Options)
         )
 
     utils.writeJsonFile(tempRojoFileName, rojoConfig)
-    rojoRunner.sourcemap(tempRojoFileName, 'sourcemap.json')
+
+    rojoRunner.sourcemap(tempRojoFileName, SOURCEMAP_PATH)
 
     prepareDarkluaConfig(tempDarkluaConfigName, {
         environment = 'roblox',
@@ -121,6 +136,47 @@ local function processRoblox(options: Options)
 
         rojoRunner.buildPlace(tempRojoFile, placeFile)
         displayCreatedMessage(placeFile)
+    elseif pluginMode then
+        awaitAll(function()
+            utils.removeFile(tempRojoFileName)
+        end, function()
+            utils.writeJsonFile(
+                tempRojoFile,
+                rojo.getPluginConfig(
+                    nameWithoutScope,
+                    if isNodeModuleProject
+                        then `node_modules/.luau-aliases/{projectName}.luau`
+                        else DEFAULT_SOURCE_PATH,
+                    PLUGIN_ENTRYPOINT_PATH
+                )
+            )
+        end, function()
+            local entrypointSource = {
+                `local module = require(script:WaitForChild('{nameWithoutScope}'))`,
+                '',
+                `local cleanup = module["{pluginStartFunctionName}"](plugin)`,
+                '',
+                'plugin.Unloading:Connect(function()',
+                '    if type(cleanup) == "function" then',
+                '        cleanup()',
+                '    end',
+                'end)',
+                '',
+            }
+            utils.writeFile(
+                tempPath:join(PLUGIN_ENTRYPOINT_PATH),
+                table.concat(entrypointSource, '\n')
+            )
+        end)
+
+        local modelFile = robloxBuildPath:join(
+            if devMode
+                then `{nameWithoutScope}-plugin-dev.rbxm`
+                else `{nameWithoutScope}-plugin.rbxm`
+        )
+        rojoRunner.buildModel(tempRojoFile, modelFile)
+
+        displayCreatedMessage(modelFile)
     else
         utils.move(tempRojoFileName, tempRojoFile)
         local modelFile = robloxBuildPath:join(
@@ -131,8 +187,13 @@ local function processRoblox(options: Options)
         displayCreatedMessage(modelFile)
     end
 
-    utils.removeFile(tempRojoFile)
-    utils.removeDirAll(tempPath)
+    awaitAll(function()
+        utils.removeFile(tempRojoFile)
+    end, function()
+        utils.removeFile(SOURCEMAP_PATH)
+    end, function()
+        utils.removeDirAll(tempPath)
+    end)
 end
 
 return processRoblox

@@ -13,10 +13,10 @@ type Path = PathModule.Path
 
 local Path = PathModule.Path
 
-export type Environment = 'roblox' | 'lune'
+export type Environment = prepareDarkluaConfig.Environment
 
 export type Options = BaseOptions.BaseOptions & {
-    environment: Environment,
+    environment: Environment?,
 }
 
 local function processBundle(options: Options)
@@ -24,7 +24,7 @@ local function processBundle(options: Options)
     local buildPath = Path.from('build')
 
     local projectName = options.projectName
-    local environment: Environment = options.environment
+    local environment: Environment? = options.environment
     local packageJsonPath = Path.from(options.packageJsonPath)
     -- local parallelMode = options.parallelMode == true
     local showCommands = options.showCommands == true
@@ -58,7 +58,10 @@ local function processBundle(options: Options)
         error(`package '{projectName}' main entry point must be a 'luau' or 'lua' file`)
     end
 
-    local bundleOutput = buildPath:join(`{nameWithoutScope}{if devMode then '-dev' else ''}.luau`)
+    local bundleParent = if environment then buildPath:join(environment) else buildPath
+
+    local bundleOutput =
+        bundleParent:join(`{nameWithoutScope}{if devMode then '-dev' else ''}.luau`)
 
     darklua.process(
         tempDarkluaConfigName,

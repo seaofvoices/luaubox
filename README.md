@@ -22,9 +22,8 @@ luabox uses [other tools](#required-tools), such as [`darklua`](https://github.c
 
 Here are some examples of luaubox commands:
 
+- `luaubox --target bundle`: Create a single luau file `<project-name>.luau`
 - `luaubox --target roblox`: Create a Roblox model `<project-name>.rbxm`
-- `luaubox --target roblox --bundle`: Create a single luau file `<project-name>.luau` (with the `LUA_ENV` set to `roblox`)
-- `luaubox --target lune --bundle`: Create a single luau file `<project-name>.luau`
 - `luaubox --target roblox --test`: Create a Roblox test place file `test-<project-name>.rbxl` and a `run` script which invokes [`run-in-roblox`](https://github.com/rojo-rbx/run-in-roblox) with the place
 
 Note that the `--dev` argument can be added to inject the development globals (`_G.DEV` and `_G.__DEV__`) as `true` (instead of the default being `false`).
