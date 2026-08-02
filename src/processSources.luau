@@ -20,6 +20,8 @@ export type Options = {
     showCommands: boolean,
     tempDarkluaConfigName: string,
     tempPath: Path,
+    nodeModulesPath: AsPath?,
+    workingDir: AsPath?,
 }
 
 local SKIP_PACKAGES = {
@@ -28,11 +30,14 @@ local SKIP_PACKAGES = {
 
 local DIM = stdio.style('dim')
 local RESET = stdio.style('reset')
+local GREEN = stdio.color('green')
 
 local function processSources(options: Options)
     local testMode = options.testMode
     local tempPath = options.tempPath
     local tempDarkluaConfigName = options.tempDarkluaConfigName
+    local nodeModulesPath = Path.from(options.nodeModulesPath or 'node_modules')
+    local workingDir = Path.from(options.workingDir or '')
 
     local darklua = createDarkluaRunner(options.showCommands)
 
@@ -62,24 +67,23 @@ local function processSources(options: Options)
         end
 
         awaitAll(function()
-            if root:equal(Path.from('')) then
+            if root:equal(workingDir) then
                 darklua.process(
                     tempDarkluaConfigName,
-                    DEFAULT_SOURCE_PATH,
-                    tempPath:join(DEFAULT_SOURCE_PATH)
+                    workingDir:join(DEFAULT_SOURCE_PATH),
+                    workingDir:join(tempPath:join(DEFAULT_SOURCE_PATH))
                 )
             else
                 darklua.process(tempDarkluaConfigName, root, tempPath:join(root))
             end
         end, function()
-            local aliasFile = `node_modules/.luau-aliases/{packageJson.name}.luau`
+            local aliasFile = nodeModulesPath:join(`.luau-aliases/{packageJson.name}.luau`)
             if utils.isFile(aliasFile) then
                 darklua.process(tempDarkluaConfigName, aliasFile, tempPath:join(aliasFile))
             end
         end)
 
-        local green = stdio.color('green')
-        print(`{DIM}processed{green} {packageJson.name}{RESET}`)
+        print(`{DIM}processed{GREEN} {packageJson.name}{RESET}`)
 
         local dependencies = {}
 
@@ -98,7 +102,7 @@ local function processSources(options: Options)
         local jobs = {}
 
         for _, dependencyName in dependencies do
-            local dependencyJsonPath = Path.from(`node_modules/{dependencyName}/package.json`)
+            local dependencyJsonPath = nodeModulesPath:join(`{dependencyName}/package.json`)
             if options.parallelMode then
                 table.insert(jobs, function()
                     processPackage(dependencyJsonPath)

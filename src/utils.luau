@@ -31,6 +31,10 @@ local function move(from: AsPath, to: AsPath)
     fs.move(tostring(from), tostring(to), true)
 end
 
+local function copy(from: AsPath, to: AsPath)
+    fs.copy(tostring(from), tostring(to), true)
+end
+
 local function removeFile(path: AsPath)
     fs.removeFile(tostring(path))
 end
@@ -62,6 +66,7 @@ return {
     readJsonFile = readJsonFile,
     isFile = isFile,
     move = move,
+    copy = copy,
     removeFile = removeFile,
     removeDirAll = removeDirAll,
 }
