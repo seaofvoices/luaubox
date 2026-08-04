@@ -14,6 +14,7 @@ type Options = {
     compact: boolean,
     noTypes: boolean,
     baseDarkluaConfigPath: AsPath?,
+    aliases: { [string]: AsPath }?,
 }
 
 local function findRule(rules: { any }, name: string): number?
@@ -35,6 +36,7 @@ local function prepareDarkluaConfig(configPath: AsPath, options: Options)
     local compact = options.compact
     local noTypes = options.noTypes
     local baseDarkluaConfigPath = options.baseDarkluaConfigPath
+    local aliases = options.aliases
 
     if environment == nil and not bundle then
         error('environment is required when bundling is not enabled')
@@ -117,6 +119,15 @@ local function prepareDarkluaConfig(configPath: AsPath, options: Options)
         end
     end
 
+    local sources = nil
+
+    if aliases then
+        sources = {}
+        for aliasName, aliasPath in aliases do
+            sources[aliasName] = tostring(aliasPath)
+        end
+    end
+
     local convertRequireIndex = findRule(darkluaConfig.rules, 'convert_require')
     if bundle then
         if convertRequireIndex then
@@ -127,7 +138,11 @@ local function prepareDarkluaConfig(configPath: AsPath, options: Options)
             local requireRule = if environment == 'roblox'
                 then {
                     rule = 'convert_require',
-                    current = 'path',
+                    current = {
+                        name = 'path',
+                        sources = sources,
+                        use_luau_configuration = aliases == nil,
+                    },
                     target = {
                         name = 'roblox',
                         rojo_sourcemap = 'sourcemap.json',
@@ -136,8 +151,16 @@ local function prepareDarkluaConfig(configPath: AsPath, options: Options)
                 }
                 elseif environment == 'lune' then {
                     rule = 'convert_require',
-                    current = 'path',
-                    target = 'luau',
+                    current = {
+                        name = 'path',
+                        sources = sources,
+                        use_luau_configuration = aliases == nil,
+                    },
+                    target = {
+                        name = 'luau',
+                        sources = sources,
+                        use_luau_configuration = aliases == nil,
+                    },
                 }
                 else error(`unexpected Lua environment '{environment}'`)
 

@@ -2,6 +2,7 @@ local fs = require('@lune/fs')
 
 local currentVersion = require('./currentVersion')
 local processBundle = require('./processBundle')
+local processLune = require('./processLune')
 local processRoblox = require('./processRoblox')
 local utils = require('./utils')
 
@@ -177,9 +178,7 @@ local function runWithArgs(args: { string })
         options.environment = normalizedEnvironment :: processBundle.Environment
         processBundle(options)
     elseif normalizedTarget == 'lune' then
-        error(
-            `the lune target is currently unimplemented!\n\nNote that luaubox can bundle using the lune environment, re-run with the 'luaubox --target bundle --env lune'`
-        )
+        processLune(options)
     end
 end
 
