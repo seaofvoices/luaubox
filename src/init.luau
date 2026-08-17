@@ -53,27 +53,36 @@ local TARGET_TO_ENVIRONMENT: { [string]: processBundle.Environment } = {
 
 local HELP_MESSAGE = `Running luaubox v{currentVersion}\n\n`
     .. [[
-luaubox <project-name> --target <target>
+luaubox [project-name] --target <target>
 
 Optional:
-    <project-name>: The name of the project to build. If not specified,
-                    luaubox will expect and use the root package.json file.
+    project-name:    The name of the project to build. If not specified,
+                     luaubox will expect and use the root package.json file.
 
 Required:
-    <target>:        The target to build ('roblox', 'roblox-plugin' or 'lune')
+    --target, -t     The target to build: 'roblox', 'roblox-plugin',
+                     'lune' or 'bundle'
 
 Options:
+    --help, -h       Show this help message
+    --version, -V    Print the luaubox version
     --show-commands  Show the commands being executed
     --parallel       Run the build in parallel
-    --dev            Define development mode variables to when processing
+    --dev, -d        Define development mode variables when processing
                      Luau code
     --base-darklua   The path to the base darklua config file
     --no-type        Remove Luau types from the output
     --compact        Shorten variables and minify source code
 
+Bundle options:
+    --environment, --env, -e
+                     The environment to bundle for ('roblox' or 'lune')
+
 Roblox options:
-    --test             Build the project as a Roblox testing place file with
-                       scripts to run it with run-in-roblox
+    --test           Build the project as a Roblox testing place file with
+                     scripts to run it with run-in-roblox
+
+Roblox plugin options:
     --plugin-function  The name of the function to call when the plugin is
                        started (default: 'start')]]
 
