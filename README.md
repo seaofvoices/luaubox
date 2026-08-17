@@ -79,6 +79,35 @@ Or if you are using `npm`:
 npm install --save-dev luaubox
 ```
 
+## Building Roblox Plugins
+
+Use `--target roblox-plugin` to produce a Roblox model that can be installed as a Studio plugin (`build/<project-name>-plugin.rbxm`, or `build/<project-name>-plugin-dev.rbxm` with `--dev`).
+
+luaubox wraps the package in a [`Script`](https://create.roblox.com/docs/reference/engine/classes/Script) that requires the module and calls an exported function with the Studio `plugin` object. That function should set up the plugin and may return a cleanup callback, which will run when `plugin.Unloading` fires.
+
+```luau
+-- the root of the package should export a function that
+-- receives the plugin object
+local function start(plugin: Plugin)
+    -- create toolbar buttons, widgets, etc.
+
+    return function()
+        -- this will run when plugin.Unloading fires
+    end
+end
+
+return {
+    start = start,
+}
+```
+
+The default export name is `start`. Pass `--plugin-function <name>` to use a different function name.
+
+```bash
+luaubox --target roblox-plugin
+luaubox --target roblox-plugin --plugin-function init
+```
+
 ## License
 
 This project is available under the MIT license. See [LICENSE.txt](LICENSE.txt) for details.
