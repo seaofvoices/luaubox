@@ -1,7 +1,7 @@
 {
   "name": "luaubox",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A tool for building Luau projects into Roblox models, bundles and more",
   "license": "MIT",
   "author": "jeparlefrancais <jeparlefrancais21@gmail.com>",

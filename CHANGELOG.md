@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.2.0
+
 - support `lune` target ([#2](https://github.com/seaofvoices/luaubox/pull/2))
 - add `bundle` and `roblox-plugin` targets ([#1](https://github.com/seaofvoices/luaubox/pull/1))
 
